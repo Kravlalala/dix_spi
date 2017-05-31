@@ -8,45 +8,51 @@
 #include "spi.h"
 
 char *device = "/dev/spidev1.3";
-int action_mode = 0;
-int ret = 0;
+int action_mask = 0;
 char *param;
 
 uint8_t reg_addr = 0;
 uint8_t value = 0;
 
-static void
-transfer (int fd, uint8_t const *tx, uint8_t const *rx, size_t len) {
-	int ret;
-	uint8_t default_tx[] = {
-	    0xFF, 0xFF, 0xFF,0xFF,
-	    0xFF, 0xFF, 0x40, 0x00,
-	    0x00, 0x00, 0x00, 0x95,
-	    0xFF, 0xFF, 0xFF, 0xFF,
-	    0xFF, 0xFF, 0xFF, 0xFF,
-	    0xFF, 0xFF, 0xFF, 0xFF,
-	    0xFF, 0xFF, 0xFF, 0xFF,
-	    0xFF, 0xFF, 0xF0, 0x0D,
-	};
+void
+parse_opts (int, char **);
 
-	uint8_t default_rx[32] = { 0, };
+void
+select_action (int, int, uint8_t *, uint8_t *);
 
-	struct spi_ioc_transfer tr = {
-	    .tx_buf = (unsigned long) default_tx,
-	    .rx_buf = (unsigned long) default_rx,
-	    .len = sizeof(default_tx),
-	    .delay_usecs = 0,
-	    .speed_hz = 24000000,
-	    .bits_per_word = 8, };
+int
+main (int argc, char *argv[]) {
 
-	ret = ioctl (fd, SPI_IOC_MESSAGE(1), &tr);
-	if (ret < 1) {
-		perror ("Couldn't send data");
-		abort ();
-	}
+	int ret = 0;
+	int fd;
+	uint8_t *tx;
+	uint8_t *rx;
+	uint32_t mode = SPI_MODE_0;
+	uint8_t bits = 8;
+	uint32_t speed = 24000000;
+
+	parse_opts (argc, argv);
+
+	fd = open (device, O_RDWR);
+	if (fd < 0)
+		perror ("Couldn't open device");
+
+	/* Set spidev ctrls */
+	set_device (fd, mode, bits, speed);
+
+	/* Read or Write data from/to register, depending on "action_mask" */
+	select_action(action_mask, fd, tx, rx);
+	close (fd);
+
+	return ret;
 }
 
-static void
+/* Parsing passed command line arguments
+ * @argc - number of passed arguments.
+ * argv[] - array of passed arguments.
+ *
+ */
+void
 parse_opts (int argc, char *argv[]) {
 	int ret = getopt (argc, argv, "r:w:v:d:");
 
@@ -63,7 +69,7 @@ parse_opts (int argc, char *argv[]) {
 
 				/* If read parameter was detected */
 			case 'r': {
-				action_mode |= 0x01;
+				action_mask |= 0x01;
 				param = optarg;
 				reg_addr = strtol (param, NULL, 16);
 				fprintf (stdout, "Reading value from reg %x\n", reg_addr);
@@ -72,7 +78,7 @@ parse_opts (int argc, char *argv[]) {
 
 				/* If write parameter was detected */
 			case 'w': {
-				action_mode |= 0x2;
+				action_mask |= 0x2;
 				param = optarg;
 				reg_addr = strtol (param, NULL, 16);
 				fprintf (stdout, "Writing value to reg %x\n", reg_addr);
@@ -108,29 +114,33 @@ parse_opts (int argc, char *argv[]) {
 	}
 }
 
-int
-main (int argc, char *argv[]) {
+void
+select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
+	int frame_size;
 
-	int ret = 0;
-	int fd;
-	uint8_t *tx;
-	uint8_t *rx;
-	int size;
-	uint32_t mode = SPI_MODE_0;
-	uint8_t bits = 8;
-	uint32_t speed = 24000000;
+	switch (action_mask) {
+		/* Read data from register */
+		case 1: {
+			/* Allocate buffers */
+			frame_size = 2;
+			tx = malloc (sizeof(uint8_t) * 2);
+			rx = malloc (sizeof(uint8_t) * 2);
 
-	parse_opts (argc, argv);
+			/* Create reading frame */
+			tx[0] = reg_addr | 0x80;
+			tx[1] = 0;
+			rx[0] = 0;
+			rx[1] = 0;
 
-	fd = open (device, O_RDWR);
-	if (fd < 0)
-		perror ("Couldn't open device");
-
-	set_device (fd, mode, bits, speed);
-
-	transfer (fd, tx, rx, 0);
-	close (fd);
-
-	return ret;
+			/* Request data */
+			transfer (fd, tx, rx, frame_size);
+			break;
+		}
+			/* Write data to the register */
+		case 2: {
+			break;
+		}
+		default:
+			break;
+	}
 }
-
