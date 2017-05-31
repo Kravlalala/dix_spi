@@ -72,7 +72,7 @@ parse_opts (int argc, char *argv[]) {
 				action_mask |= 0x01;
 				param = optarg;
 				reg_addr = strtol (param, NULL, 16);
-				fprintf (stdout, "Reading value from reg %x\n", reg_addr);
+				//fprintf (stdout, "Reading value from reg %x\n", reg_addr);
 				break;
 			}
 
@@ -81,7 +81,7 @@ parse_opts (int argc, char *argv[]) {
 				action_mask |= 0x2;
 				param = optarg;
 				reg_addr = strtol (param, NULL, 16);
-				fprintf (stdout, "Writing value to reg %x\n", reg_addr);
+				//fprintf (stdout, "Writing value to reg %x\n", reg_addr);
 				break;
 			}
 
@@ -89,7 +89,7 @@ parse_opts (int argc, char *argv[]) {
 			case 'v': {
 				param = optarg;
 				value = strtol (param, NULL, 16);
-				fprintf (stdout, "Writing value %x\n", value);
+				//fprintf (stdout, "Writing value %x\n", value);
 				break;
 			}
 
@@ -134,6 +134,15 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 
 			/* Request data */
 			transfer (fd, tx, rx, frame_size);
+
+			/* Print transmitted frame */
+			printf ("Transmit: ");
+			print_frame (tx, 2);
+
+			/* Print recieved frame */
+			printf ("Recieve: ");
+			print_frame (rx, 2);
+
 			break;
 		}
 			/* Write data to the register */
@@ -152,6 +161,14 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 
 			/* Send data */
 			transfer (fd, tx, rx, frame_size);
+
+			/* Print transmitted frame */
+			printf ("Transmit: ");
+			print_frame (tx, 3);
+
+			/* Print recieved frame */
+			printf ("Recieve: ");
+			print_frame (rx, 3);
 			break;
 		}
 		default:

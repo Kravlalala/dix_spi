@@ -12,7 +12,7 @@
  * @mode - spi mode (SPI_MODE0,1,...).
  * @bits - number bits in transferring word.
  * @speed - bus speed in Hz.
-*/
+ */
 void
 set_device (int fd, uint32_t mode, uint8_t bits, uint32_t speed) {
 	int ret;
@@ -61,46 +61,60 @@ set_device (int fd, uint32_t mode, uint8_t bits, uint32_t speed) {
 	printf ("max speed: %d Hz (%d KHz)\n", speed, speed / 1000);
 }
 
-void print_frame(){
-
+/* Output frame content in the terminal
+ * @frame - pointer to the frame.
+ * @frame_size - number of bytes per one frame.
+ */
+void
+print_frame (const uint8_t *frame, const int frame_size) {
+	for (int i = 0; i < frame_size; i++) {
+		printf ("0x%x ", frame[i]);
+	}
+	printf ("\n");
 }
 
+/* SPI request in full duplex mode
+ * @fd - descriptor of spidev device.
+ * @tx - buffer for transmitted data.
+ * @rx - buffer for recieved data.
+ * @len - buffers size.
+ */
 void
 transfer (int fd, uint8_t *tx, uint8_t *rx, size_t len) {
 	int ret;
 	/*uint8_t default_tx[] = {
-	    0xFF, 0xFF, 0xFF,0xFF,
-	    0xFF, 0xFF, 0x40, 0x00,
-	    0x00, 0x00, 0x00, 0x95,
-	    0xFF, 0xFF, 0xFF, 0xFF,
-	    0xFF, 0xFF, 0xFF, 0xFF,
-	    0xFF, 0xFF, 0xFF, 0xFF,
-	    0xFF, 0xFF, 0xFF, 0xFF,
-	    0xFF, 0xFF, 0xF0, 0x0D,
-	};
+	 0xFF, 0xFF, 0xFF,0xFF,
+	 0xFF, 0xFF, 0x40, 0x00,
+	 0x00, 0x00, 0x00, 0x95,
+	 0xFF, 0xFF, 0xFF, 0xFF,
+	 0xFF, 0xFF, 0xFF, 0xFF,
+	 0xFF, 0xFF, 0xFF, 0xFF,
+	 0xFF, 0xFF, 0xFF, 0xFF,
+	 0xFF, 0xFF, 0xF0, 0x0D,
+	 };
 
-	uint8_t default_rx[32] = { 0, };
+	 uint8_t default_rx[32] = { 0, };
+
+	 struct spi_ioc_transfer tr = {
+	 .tx_buf = (unsigned long) default_tx,
+	 .rx_buf = (unsigned long) default_rx,
+	 .len = sizeof(default_tx),
+	 .delay_usecs = 0,
+	 .speed_hz = 24000000,
+	 .bits_per_word = 8, };*/
 
 	struct spi_ioc_transfer tr = {
-	    .tx_buf = (unsigned long) default_tx,
-	    .rx_buf = (unsigned long) default_rx,
-	    .len = sizeof(default_tx),
-	    .delay_usecs = 0,
-	    .speed_hz = 24000000,
-	    .bits_per_word = 8, };*/
-
-	struct spi_ioc_transfer tr = {
-		  .tx_buf = (unsigned long) tx,
-		  .rx_buf = (unsigned long) rx,
+	    .tx_buf = (unsigned long) tx,
+	    .rx_buf = (unsigned long) rx,
 	    .len = len,
 	    .delay_usecs = 0,
-		  .speed_hz = 24000000,
-		  .bits_per_word = 8,
-	};
+	    .speed_hz = 24000000,
+	    .bits_per_word = 8, };
 
 	ret = ioctl (fd, SPI_IOC_MESSAGE(1), &tr);
 	if (ret < 1) {
 		perror ("Couldn't send data");
 		abort ();
 	}
+
 }
