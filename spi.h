@@ -22,6 +22,8 @@
 void
 set_device (int, uint32_t, uint8_t, uint32_t);
 
+void print_frame();
+
 void
 transfer (int, uint8_t *, uint8_t *, size_t);
 

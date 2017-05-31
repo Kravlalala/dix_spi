@@ -41,7 +41,7 @@ main (int argc, char *argv[]) {
 	set_device (fd, mode, bits, speed);
 
 	/* Read or Write data from/to register, depending on "action_mask" */
-	select_action(action_mask, fd, tx, rx);
+	select_action (action_mask, fd, tx, rx);
 	close (fd);
 
 	return ret;
@@ -138,9 +138,24 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 		}
 			/* Write data to the register */
 		case 2: {
+			frame_size = 3;
+			tx = malloc (sizeof(uint8_t) * 2);
+			rx = malloc (sizeof(uint8_t) * 2);
+
+			/* Create reading frame */
+			tx[0] = reg_addr & 0x7f;
+			tx[1] = 0;
+			tx[2] = value;
+			rx[0] = 0;
+			rx[1] = 0;
+			rx[2] = 0;
+
+			/* Send data */
+			transfer (fd, tx, rx, frame_size);
 			break;
 		}
 		default:
+			fprintf (stderr, "Unknown action\n");
 			break;
 	}
 }

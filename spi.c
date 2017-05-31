@@ -61,6 +61,10 @@ set_device (int fd, uint32_t mode, uint8_t bits, uint32_t speed) {
 	printf ("max speed: %d Hz (%d KHz)\n", speed, speed / 1000);
 }
 
+void print_frame(){
+
+}
+
 void
 transfer (int fd, uint8_t *tx, uint8_t *rx, size_t len) {
 	int ret;
