@@ -119,29 +119,37 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 	int frame_size;
 
 	switch (action_mask) {
-		/* Read data from register */
+		/* Default setup */
+		case 0: {
+			printf ("Setting DIX to the default state\n");
+			dix_init (fd);
+			break;
+		}
+			/* Read data from register */
 		case 1: {
 			/* Allocate buffers */
-			frame_size = 2;
+			frame_size = 3;
 			tx = malloc (sizeof(uint8_t) * 2);
 			rx = malloc (sizeof(uint8_t) * 2);
 
 			/* Create reading frame */
 			tx[0] = reg_addr | 0x80;
 			tx[1] = 0;
+			tx[2] = 0;
 			rx[0] = 0;
 			rx[1] = 0;
+			rx[2] = 0;
 
 			/* Request data */
 			transfer (fd, tx, rx, frame_size);
 
 			/* Print transmitted frame */
 			printf ("Transmit: ");
-			print_frame (tx, 2);
+			print_frame (tx, 3);
 
 			/* Print recieved frame */
 			printf ("Recieve: ");
-			print_frame (rx, 2);
+			print_frame (rx, 3);
 
 			break;
 		}

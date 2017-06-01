@@ -118,3 +118,65 @@ transfer (int fd, uint8_t *tx, uint8_t *rx, size_t len) {
 	}
 
 }
+
+void
+dix_init (int fd) {
+	/* Create buffers */
+	uint8_t tx[3] = { [0 ... 2] = 0 };
+	uint8_t rx[3] = { [0 ... 2] = 0 };
+
+	/* Select page */
+	tx[0] = 0x7f;
+	tx[2] = 0x00;
+	transfer (fd, tx, rx, 3);
+	usleep (100);
+
+	/* System reset */
+	tx[0] = 0x01;
+	tx[2] = 0x80;
+	transfer (fd, tx, rx, 3);
+	usleep (100);
+
+	/* Power down all modules */
+	tx[0] = 0x01;
+	tx[2] = 0x00;
+	transfer (fd, tx, rx, 3);
+	usleep (100);
+
+	/* DIR configure */
+	tx[0] = 0x0d;
+	tx[2] = 0x00;
+	transfer (fd, tx, rx, 3);
+
+	tx[0] = 0x0e;
+	tx[2] = 0x07;
+	transfer (fd, tx, rx, 3);
+
+	/* Set up PLL1 */
+	tx[0] = 0x0f;
+	tx[2] = 0x22;
+	transfer (fd, tx, rx, 3);
+
+	tx[0] = 0x10;
+	tx[2] = 0x00;
+	transfer (fd, tx, rx, 3);
+
+	tx[0] = 0x11;
+	tx[2] = 0x00;
+	transfer (fd, tx, rx, 3);
+
+	/* Set up port A */
+	tx[0] = 0x03;
+	tx[2] = 0x29;
+	transfer (fd, tx, rx, 3);
+
+	tx[0] = 0x04;
+	tx[2] = 0x05;
+	transfer (fd, tx, rx, 3);
+
+	/* Enable all functional blocks */
+	tx[0] = 0x01;
+	tx[2] = 0x32;
+	transfer (fd, tx, rx, 3);
+
+}

@@ -28,4 +28,6 @@ print_frame (const uint8_t *, const int frame_size);
 void
 transfer (int, uint8_t *, uint8_t *, size_t);
 
+void dix_init (int);
+
 #endif /* SPI_H_ */
