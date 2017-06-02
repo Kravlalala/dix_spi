@@ -140,8 +140,9 @@ dix_init (int fd) {
 	tx[2] = 0x00;
 	transfer (fd, tx, rx, 3);
 
+	/* Set divider after PLL2 to bypass */
 	tx[0] = 0x0e;
-	tx[2] = 0x07;
+	tx[2] = 0x01;
 	transfer (fd, tx, rx, 3);
 
 	/* Set up PLL1 */
@@ -157,13 +158,19 @@ dix_init (int fd) {
 	tx[2] = 0x00;
 	transfer (fd, tx, rx, 3);
 
-	/* Set up port A */
+	/* Set up port A I2S */
 	tx[0] = 0x03;
-	tx[2] = 0x29;
+	tx[2] = 0x69;
 	transfer (fd, tx, rx, 3);
 
+	/* Set divider=128 */
 	tx[0] = 0x04;
-	tx[2] = 0x09;
+	tx[2] = 0x08;
+	transfer (fd, tx, rx, 3);
+
+	/*Unmute Port A*/
+	tx[0] = 0x03;
+	tx[2] = 0x29;
 	transfer (fd, tx, rx, 3);
 
 	/* Enable all functional blocks */
