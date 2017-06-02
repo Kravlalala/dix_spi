@@ -82,26 +82,6 @@ print_frame (const uint8_t *frame, const int frame_size) {
 void
 transfer (int fd, uint8_t *tx, uint8_t *rx, size_t len) {
 	int ret;
-	/*uint8_t default_tx[] = {
-	 0xFF, 0xFF, 0xFF,0xFF,
-	 0xFF, 0xFF, 0x40, 0x00,
-	 0x00, 0x00, 0x00, 0x95,
-	 0xFF, 0xFF, 0xFF, 0xFF,
-	 0xFF, 0xFF, 0xFF, 0xFF,
-	 0xFF, 0xFF, 0xFF, 0xFF,
-	 0xFF, 0xFF, 0xFF, 0xFF,
-	 0xFF, 0xFF, 0xF0, 0x0D,
-	 };
-
-	 uint8_t default_rx[32] = { 0, };
-
-	 struct spi_ioc_transfer tr = {
-	 .tx_buf = (unsigned long) default_tx,
-	 .rx_buf = (unsigned long) default_rx,
-	 .len = sizeof(default_tx),
-	 .delay_usecs = 0,
-	 .speed_hz = 24000000,
-	 .bits_per_word = 8, };*/
 
 	struct spi_ioc_transfer tr = {
 	    .tx_buf = (unsigned long) tx,
@@ -117,8 +97,20 @@ transfer (int fd, uint8_t *tx, uint8_t *rx, size_t len) {
 		abort ();
 	}
 
+	/* Print transmitted frame */
+	printf ("Transmit: ");
+	print_frame (tx, len);
+
+	/* Print recieved frame */
+	printf ("Recieved: ");
+	print_frame (rx, len);
+
 }
 
+/* Writing default data vector in DIX registers if command line arguments
+ * hasn't been passed.
+ * @fd - descriptor of spidev device.
+ */
 void
 dix_init (int fd) {
 	/* Create buffers */
@@ -171,7 +163,7 @@ dix_init (int fd) {
 	transfer (fd, tx, rx, 3);
 
 	tx[0] = 0x04;
-	tx[2] = 0x05;
+	tx[2] = 0x09;
 	transfer (fd, tx, rx, 3);
 
 	/* Enable all functional blocks */
@@ -179,4 +171,32 @@ dix_init (int fd) {
 	tx[2] = 0x32;
 	transfer (fd, tx, rx, 3);
 
+}
+
+/* System reset
+ * @fd - descriptor of spidev device.
+ */
+void
+dix_reset (int fd) {
+	/* Create buffers */
+	uint8_t tx[3] = { [0 ... 2] = 0 };
+	uint8_t rx[3] = { [0 ... 2] = 0 };
+
+	/* Reset sequence */
+	tx[0] = 0x7f;
+	tx[2] = 0x00;
+	transfer (fd, tx, rx, 3);
+	usleep (100);
+
+	/* System reset */
+	tx[0] = 0x01;
+	tx[2] = 0x80;
+	transfer (fd, tx, rx, 3);
+	usleep (100);
+
+	/* Power on all modules, except Port B and DIT */
+	tx[0] = 0x01;
+	tx[2] = 0x32;
+	transfer (fd, tx, rx, 3);
+	usleep (100);
 }

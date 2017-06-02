@@ -54,7 +54,7 @@ main (int argc, char *argv[]) {
  */
 void
 parse_opts (int argc, char *argv[]) {
-	int ret = getopt (argc, argv, "r:w:v:d:");
+	int ret = getopt (argc, argv, "r:w:v:d:p");
 
 	/* Parsing parameters loop */
 	while (ret != -1) {
@@ -93,6 +93,12 @@ parse_opts (int argc, char *argv[]) {
 				break;
 			}
 
+			case 'p': {
+				param = optarg;
+				action_mask |= 0x4;
+				break;
+			}
+
 				/* If unknown parameter was detected */
 			case '?': {
 				if (optopt == ret)
@@ -110,7 +116,7 @@ parse_opts (int argc, char *argv[]) {
 
 		/* Get next param */
 		param = 0;
-		ret = getopt (argc, argv, "r:w:v:d:");
+		ret = getopt (argc, argv, "r:w:v:d:p");
 	}
 }
 
@@ -143,14 +149,6 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 			/* Request data */
 			transfer (fd, tx, rx, frame_size);
 
-			/* Print transmitted frame */
-			printf ("Transmit: ");
-			print_frame (tx, 3);
-
-			/* Print recieved frame */
-			printf ("Recieve: ");
-			print_frame (rx, 3);
-
 			break;
 		}
 			/* Write data to the register */
@@ -177,6 +175,10 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 			/* Print recieved frame */
 			printf ("Recieve: ");
 			print_frame (rx, 3);
+			break;
+		}
+		case 4: {
+			dix_reset (fd);
 			break;
 		}
 		default:
