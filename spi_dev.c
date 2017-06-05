@@ -127,8 +127,10 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 	switch (action_mask) {
 		/* Default setup */
 		case 0: {
-			printf ("Setting DIX to the default state\n");
-			dix_init (fd);
+			printf ("Setting first S/PDIF channel to default state\n");
+			dix_init (fd, "/dev/spidev1.3");
+			printf ("Setting second S/PDIF channel to default state\n");
+			dix_init (fd, "/dev/spidev1.2");
 			break;
 		}
 			/* Read data from register */
@@ -149,6 +151,9 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 			/* Request data */
 			transfer (fd, tx, rx, frame_size);
 
+			/* Free buffers */
+			free (tx);
+			free (rx);
 			break;
 		}
 			/* Write data to the register */
@@ -168,13 +173,9 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 			/* Send data */
 			transfer (fd, tx, rx, frame_size);
 
-			/* Print transmitted frame */
-			printf ("Transmit: ");
-			print_frame (tx, 3);
-
-			/* Print recieved frame */
-			printf ("Recieve: ");
-			print_frame (rx, 3);
+			/* Free buffers */
+			free (tx);
+			free (rx);
 			break;
 		}
 		case 4: {

@@ -112,7 +112,7 @@ transfer (int fd, uint8_t *tx, uint8_t *rx, size_t len) {
  * @fd - descriptor of spidev device.
  */
 void
-dix_init (int fd) {
+dix_init (int fd, const char *device) {
 	/* Create buffers */
 	uint8_t tx[3] = { [0 ... 2] = 0 };
 	uint8_t rx[3] = { [0 ... 2] = 0 };
@@ -136,14 +136,47 @@ dix_init (int fd) {
 	usleep (100);
 
 	/* DIR configure */
-	tx[0] = 0x0d;
-	tx[2] = 0x00;
-	transfer (fd, tx, rx, 3);
+	if (strcmp (device, "/dev/spidev.1.3") == 0) {
+		/* RX1 as input RXCKI as ref */
+		tx[0] = 0x0d;
+		tx[2] = 0x00;
+		transfer (fd, tx, rx, 3);
+	}
+	if (strcmp (device, "/dev/spidev1.2") == 0) {
+		/* Rx4 as input RXCKI as ref */
+		tx[0] = 0x0d;
+		tx[2] = 0x03;
+		transfer (fd, tx, rx, 3);
+	}
 
 	/* Set divider after PLL2 to bypass */
 	tx[0] = 0x0e;
-	tx[2] = 0x01;
+	tx[2] = 0x10;
 	transfer (fd, tx, rx, 3);
+
+	/* Set up port X */
+	if (strcmp (device, "/dev/spidev1.3") == 0) {
+		/* Port A, I2S 24 bit, Master mode, DIR as source, mute output */
+		tx[0] = 0x03;
+		tx[2] = 0x69;
+		transfer (fd, tx, rx, 3);
+
+		/* Set divider=128 */
+		tx[0] = 0x04;
+		tx[2] = 0x08;
+		transfer (fd, tx, rx, 3);
+	}
+	if (strcmp (device, "/dev/spidev1.2") == 0) {
+		/* Port B, I2S 24 bit, Master mode, DIR as source, mute output */
+		tx[0] = 0x05;
+		tx[2] = 0x69;
+		transfer (fd, tx, rx, 3);
+
+		/* Set divider=128 */
+		tx[0] = 0x06;
+		tx[2] = 0x07;
+		transfer (fd, tx, rx, 3);
+	}
 
 	/* Set up PLL1 */
 	tx[0] = 0x0f;
@@ -158,25 +191,28 @@ dix_init (int fd) {
 	tx[2] = 0x00;
 	transfer (fd, tx, rx, 3);
 
-	/* Set up port A I2S */
-	tx[0] = 0x03;
-	tx[2] = 0x69;
-	transfer (fd, tx, rx, 3);
+	if (strcmp (device, "/dev/spidev1.3") == 0) {
+		/*Unmute Port A*/
+		tx[0] = 0x03;
+		tx[2] = 0x29;
+		transfer (fd, tx, rx, 3);
 
-	/* Set divider=128 */
-	tx[0] = 0x04;
-	tx[2] = 0x08;
-	transfer (fd, tx, rx, 3);
+		/* Enable all functional blocks except Port B and DIT */
+		tx[0] = 0x01;
+		tx[2] = 0x32;
+		transfer (fd, tx, rx, 3);
+	}
+	if (strcmp (device, "/dev/spidev1.2") == 0) {
+		/*Unmute Port B*/
+		tx[0] = 0x05;
+		tx[2] = 0x29;
+		transfer (fd, tx, rx, 3);
 
-	/*Unmute Port A*/
-	tx[0] = 0x03;
-	tx[2] = 0x29;
-	transfer (fd, tx, rx, 3);
-
-	/* Enable all functional blocks */
-	tx[0] = 0x01;
-	tx[2] = 0x32;
-	transfer (fd, tx, rx, 3);
+		/* Enable all functional blocks except Port A and DIT */
+		tx[0] = 0x01;
+		tx[2] = 0x2A;
+		transfer (fd, tx, rx, 3);
+	}
 
 }
 
