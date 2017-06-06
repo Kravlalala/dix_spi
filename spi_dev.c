@@ -29,7 +29,7 @@ main (int argc, char *argv[]) {
 	uint8_t *rx;
 	uint32_t mode = SPI_MODE_0;
 	uint8_t bits = 8;
-	uint32_t speed = 24000000;
+	uint32_t speed = 12000000;
 
 	parse_opts (argc, argv);
 
@@ -127,14 +127,23 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 	switch (action_mask) {
 		/* Default setup */
 		case 0: {
-			printf ("Setting first S/PDIF channel to default state\n");
-			dix_init (fd, "/dev/spidev1.3");
-			printf ("Setting second S/PDIF channel to default state\n");
-			dix_init (fd, "/dev/spidev1.2");
+			if (strcmp (device, "/dev/spidev1.3") == 0) {
+				printf ("Setting spidev1.3 device to default state\n");
+				dix_init (fd, "/dev/spidev1.3");
+			}
+			else if (strcmp (device, "/dev/spidev1.2") == 0) {
+				printf ("Setting spidev1.2 to default state\n");
+				dix_init (fd, "/dev/spidev1.2");
+			}
+
+			else
+				fprintf (stderr,
+				         "Unknown device! Please select device for default setup\n");
 			break;
 		}
 			/* Read data from register */
 		case 1: {
+			char *current_dev = device;
 			/* Allocate buffers */
 			frame_size = 3;
 			tx = malloc (sizeof(uint8_t) * 2);
@@ -158,6 +167,7 @@ select_action (int action_mask, int fd, uint8_t *tx, uint8_t *rx) {
 		}
 			/* Write data to the register */
 		case 2: {
+			char *current_dev = device;
 			frame_size = 3;
 			tx = malloc (sizeof(uint8_t) * 2);
 			rx = malloc (sizeof(uint8_t) * 2);

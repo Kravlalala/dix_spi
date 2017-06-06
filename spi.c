@@ -88,7 +88,7 @@ transfer (int fd, uint8_t *tx, uint8_t *rx, size_t len) {
 	    .rx_buf = (unsigned long) rx,
 	    .len = len,
 	    .delay_usecs = 0,
-	    .speed_hz = 24000000,
+	    .speed_hz = 12000000,
 	    .bits_per_word = 8, };
 
 	ret = ioctl (fd, SPI_IOC_MESSAGE(1), &tr);
@@ -136,7 +136,7 @@ dix_init (int fd, const char *device) {
 	usleep (100);
 
 	/* DIR configure */
-	if (strcmp (device, "/dev/spidev.1.3") == 0) {
+	if (strcmp (device, "/dev/spidev1.3") == 0) {
 		/* RX1 as input RXCKI as ref */
 		tx[0] = 0x0d;
 		tx[2] = 0x00;
@@ -149,7 +149,8 @@ dix_init (int fd, const char *device) {
 		transfer (fd, tx, rx, 3);
 	}
 
-	/* Set divider after PLL2 to bypass */
+	/* Set divider after PLL2 to bypass, RXCKO to hight-impedance, PLL2 runs,
+	 *  when LOL occurs */
 	tx[0] = 0x0e;
 	tx[2] = 0x10;
 	transfer (fd, tx, rx, 3);
@@ -161,9 +162,9 @@ dix_init (int fd, const char *device) {
 		tx[2] = 0x69;
 		transfer (fd, tx, rx, 3);
 
-		/* Set divider=128 */
+		/* Set divider=512, RXCKI as source for LRCK */
 		tx[0] = 0x04;
-		tx[2] = 0x08;
+		tx[2] = 0x07;
 		transfer (fd, tx, rx, 3);
 	}
 	if (strcmp (device, "/dev/spidev1.2") == 0) {
@@ -172,7 +173,7 @@ dix_init (int fd, const char *device) {
 		tx[2] = 0x69;
 		transfer (fd, tx, rx, 3);
 
-		/* Set divider=128 */
+		/* Set divider=512, RXCKI as source for LRCK */
 		tx[0] = 0x06;
 		tx[2] = 0x07;
 		transfer (fd, tx, rx, 3);
